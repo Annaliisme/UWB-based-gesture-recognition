@@ -1,0 +1,147 @@
+import pandas as pd
+import numpy as np
+import math
+import pymongo
+from yasa import sliding_window
+import pickle
+from keras.models import load_model
+import time
+from yeelight import Bulb
+from copy import deepcopy
+
+
+bulb1 = Bulb("192.168.137.149")
+bulb2 = Bulb("192.168.137.218")
+g=(0,255,0)
+r=(255,0,0)
+b=(0,0,255)
+t=deepcopy(r)
+
+
+p1=(573.2, 411.55, 150.75 ,218.0)
+p2=(223.25, 257.55, 316.4, 181.65)
+
+
+client=pymongo.MongoClient('localhost',27017)
+db=client['local']
+collection0=db['RT_UWB_capped']
+
+
+model=load_model('har_model_anna')
+
+
+def changergb():
+    global t
+    print(t)
+    if t==r:
+        t= deepcopy(g)
+        return
+    if t==g:
+        t= deepcopy(b)
+        return
+    if t==b:
+        t= deepcopy(r)
+        return
+
+
+
+def isnear(p,pt,threshold):
+    distance = math.sqrt( (p[0]-pt[0])**2+(p[1]-pt[1])**2 +(p[2]-pt[2])**2 +(p[3]-pt[3])**2) 
+    print(distance)
+    return distance<threshold
+
+def nearbuble(pt,threshold):
+    if isnear(p1,pt, threshold):
+        return bulb1
+    elif isnear(p2,pt, threshold):
+        return bulb2
+    else:
+        return None
+
+
+pt=0
+while True:
+    time.sleep(0.7)
+    buble=None
+    cursor=collection0.find()
+    dataframe = pd.DataFrame(list(cursor))
+    dataframe=dataframe[["A","B","C","D"]]
+    npt=dataframe.to_numpy()
+    npt_a=np.mean(npt[:,0])
+    npt_b=np.mean(npt[:,1])
+    npt_c=np.mean(npt[:,2])
+    npt_d=np.mean(npt[:,3])
+    pn=(npt_a,npt_b,npt_c,npt_d)
+    npt=npt-npt[0]
+    npt=np.expand_dims(npt, axis=0)
+    y_prob = model.predict(npt) 
+    #print(y_prob.shape)
+    y_classes = y_prob.argmax(axis=-1)
+    score=y_prob[0,y_classes[0]]
+    if pt==y_classes[0]:
+        continue
+    pt=y_classes[0]
+    print(y_classes[0])
+    if y_classes[0]==0:
+        if score>0.998:
+            bulb=nearbuble(pn,100)
+            if bulb==None:
+                continue
+            bulb.toggle()
+    elif y_classes[0]==1:
+        if score>0.993:
+            bulb=nearbuble(pn,100)
+            if bulb==None:
+                continue
+            changergb()
+            bulb1.set_rgb(t[0],t[1],t[2])
+    elif y_classes[0]==2:
+        if score>0.997:
+            bulb1.turn_on()
+            bulb2.turn_on()
+    elif y_classes[0]==3:
+        if score>0.98:
+            bulb1.turn_off()
+            bulb2.turn_off()
+
+
+
+
+bulb2.toggle()
+
+
+
+changergb()
+bulb2.set_rgb(t[0],t[1],t[2])
+
+
+
+
+
+bulb1.toggle()
+
+
+
+
+
+changergb()
+bulb1.set_rgb(t[0],t[1],t[2])
+
+
+
+
+bulb1.turn_on()
+bulb2.turn_on()
+
+
+
+
+
+bulb1.turn_off()
+bulb2.turn_off()
+
+
+
+
+
+
