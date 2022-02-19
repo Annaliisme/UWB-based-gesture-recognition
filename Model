@@ -1,0 +1,293 @@
+import pickle5 as pickle
+import math
+import numpy as np # linear algebra
+import pandas as pd
+from IPython.display import Image 
+from PIL import Image
+import threading
+import os,sys
+from torch import nn
+import torch.nn.functional as F
+from torch.autograd import Variable
+import torch.optim as optim
+import torch
+import numpy as np
+import pandas as pd
+from sklearn.utils import shuffle
+from sklearn.model_selection import train_test_split
+from sklearn import preprocessing
+from torch.utils.data import DataLoader, TensorDataset
+from keras.layers import Bidirectional,Flatten, Embedding, Dense 
+import pytorch_lightning as pl
+import keras
+from keras import Sequential
+from keras.callbacks import ReduceLROnPlateau, CSVLogger, EarlyStopping
+#from torchsummary import summary
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import average_precision_score
+from sklearn.metrics import f1_score,recall_score
+from sklearn.svm import SVC,LinearSVC
+import matplotlib.pyplot as plt
+from matplotlib import mlab
+import matplotlib.cm as cm
+from pytorch_lightning import Trainer
+from keras.utils import np_utils
+from keras.callbacks import ReduceLROnPlateau, CSVLogger, EarlyStopping
+from keras.preprocessing.text import Tokenizer
+from sklearn.preprocessing import LabelEncoder
+from keras.preprocessing.sequence import pad_sequences
+import os
+import gc
+import tensorflow as tf
+from keras.models import Model
+from keras.layers import Input, Dense, LSTM, multiply, concatenate, Activation, Masking, Reshape
+from keras.layers import Conv1D, BatchNormalization, GlobalAveragePooling1D, Permute, Dropout
+from keras import backend as K
+import optunity
+from optunity.metrics import accuracy
+import matplotlib
+
+
+
+#x0=pickle.load(open( "x.p", "rb" ) )
+#y0=pickle.load(open( "y.p", "rb" ) )
+#x1=pickle.load(open( "x1.p", "rb" ) )
+#y1=pickle.load(open( "y1.p", "rb" ) )
+#x2=pickle.load(open( "x2.p", "rb" ) )
+#y2=pickle.load(open( "y2.p", "rb" ) )
+#x3=pickle.load(open( "x3.p", "rb" ) )
+#y3=pickle.load(open( "y3.p", "rb" ) )
+#x=np.concatenate((x1,x2,x3), axis=0)
+#y=np.concatenate((y1,y2,y3), axis=0)
+#x518=pickle.load(open( "x_518_fall.p", "rb" ) )
+#y518=pickle.load(open( "y_518_fall.p", "rb" ) )
+#x519=pickle.load(open( "x_519_fall.p", "rb" ) )
+#y519=pickle.load(open( "y_519_fall.p", "rb" ) )
+
+
+x=pickle.load(open( "D:/paper/gesture_TVT_05.05.2021/Data/x_417.p", "rb" ) )
+y=pickle.load(open( "D:/paper/gesture_TVT_05.05.2021/Data/y_417.p", "rb" ) )
+
+#x=np.concatenate((x518,x519), axis=0)
+#y=np.concatenate((y518,y519), axis=0)
+
+print(x.shape)
+
+print(np.unique(y,return_counts=True))
+
+def squeeze_excite_block(input):
+    ''' Create a squeeze-excite block
+    Args:
+        input: input tensor
+        filters: number of output filters
+        k: width factor
+    Returns: a keras tensor
+    '''
+    filters = input.shape[-1] # channel_axis = -1 for TF
+
+    se = GlobalAveragePooling1D()(input)
+    se = Reshape((1, filters))(se)
+    se = Dense(filters // 20,  activation='relu', kernel_initializer='he_normal', use_bias=False)(se)
+    se = Dense(filters, activation='sigmoid', kernel_initializer='he_normal', use_bias=False)(se)
+    se = multiply([input, se])
+    return se
+
+def generate_model2(length,channel,num_class):
+    ip = Input(shape=(length,channel))
+
+    #x = (ip)
+    #x = LSTM(8)(x)
+    #x = Dropout(0.8)(x)
+
+    #y = Embedding(2201, 1, input_length=length)(ip)
+    #y =Flatten()(y)
+    #y=Reshape((7, 1))(y)
+    y = Conv1D(128, 8, padding='same', kernel_initializer='he_uniform')(ip)
+    y = BatchNormalization()(y)
+    y = Activation('relu')(y)
+    y = squeeze_excite_block(y)
+
+    y = Conv1D(256, 8, padding='same', kernel_initializer='he_uniform')(y)
+    y = BatchNormalization()(y)
+    y = Activation('relu')(y)
+    y = squeeze_excite_block(y)
+
+    y = Conv1D(128, 8, padding='same', kernel_initializer='he_uniform')(y)
+    y = BatchNormalization()(y)
+    y = Activation('relu')(y)
+
+    y = GlobalAveragePooling1D()(y)
+
+    #x = concatenate([x, y])
+
+    out = Dense(num_class, activation='softmax')(y)
+
+    model = Model(ip, out)
+    model.summary()
+
+    # add load model code here to fine-tune
+
+    return model
+
+
+model=generate_model2(16,3,5)
+model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001), loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+
+
+
+y0=y[y==0]
+x0=x[y==0]
+
+y1=y[y==1]
+x1=x[y==1]
+
+y2=y[y==2]
+x2=x[y==2]
+
+y3=y[y==3]
+x3=x[y==3]
+
+# y4=y[y==4]
+# x4=x[y==4]
+# x4, y4 = shuffle(x4,y4)
+
+
+y4=y[y==4]
+x4=x[y==4]
+x4, y4 = shuffle(x4,y4)
+
+x4=x4[:4000,::]
+y4=y4[:4000]
+
+yall=np.concatenate((y0,y1,y2,y3,y4), axis=0)
+xall=np.concatenate((x0,x1,x2,x3,x4), axis=0)
+print(xall.shape,yall.shape)
+print(np.unique(yall,return_counts=True))
+
+# y9=y[y==9]
+# x9=x[y==9]
+#
+# y8=y[y==8]
+# x8=x[y==8]
+#
+# y7=y[y==7]
+# x7=x[y==7]
+#
+# y6=y[y==6]
+# x6=x[y==6]
+#
+#
+# y5=y[y==5]
+# x5=x[y==5]
+# x5, y5 = shuffle(x5,y5)
+#
+# x5=x5[:1000,::]
+# y5=y5[:1000]
+
+# yall=np.concatenate((y9,y8,y7,y6,y5), axis=0)
+# xall=np.concatenate((x9,x8,x7,x6,x5), axis=0)
+# le = preprocessing.LabelEncoder()
+# yall=le.fit_transform(yall)
+# print(xall.shape,yall.shape)
+# print(np.unique(yall,return_counts=True))
+
+
+
+x_train, x_test, y_train, y_test =train_test_split(xall, yall, test_size=0.15)
+
+
+result=model.fit(xall, yall, epochs = 25,validation_data=(x_test, y_test), batch_size = 60)
+
+
+model.save('har_model_anna')
+
+
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import average_precision_score
+from sklearn.metrics import f1_score
+
+
+#y_pred = model.predict_classes(x_test)
+y_prob = model.predict(x_test)
+print(y_prob.shape)
+print(y_prob[0])
+y_pred=[]
+for i in range(len(y_prob)):
+    y_pred.append(np.argmax(y_prob[i]))
+#print(len(y_pred))
+
+#classifier = SVC(kernel='rbf', C=10,gamma=10**-4.3,class_weight='balanced')
+#classifier= RandomForestClassifier(n_estimators=110)
+#classifier=KNeighborsClassifier(n_neighbors=3)
+#y_pred = classifier.fit(x_train, y_train).predict(x_test)
+# Compute confusion matrix
+# print(accuracy_score(y_test,y_pred))
+# recall=recall_score(y_test, y_pred,average='macro')
+# print(recall)
+# print(f1_score(y_test,y_pred,average="macro"))
+
+
+import itertools
+font = {'family' : 'normal',
+        'size'   : 32}
+
+matplotlib.rc('font', **font)
+def plot_confusion_matrix(cm, classes,
+                          normalize=False,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Blues):
+    """
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    """
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+
+    print(cm)
+    plt.figure(figsize=(16,16))
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=60,fontsize=37)
+    plt.yticks(tick_marks, classes,fontsize=37)
+
+    fmt = '.4f' if normalize else 'd'
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, format(cm[i, j], fmt),
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+
+#y_pred = model.predict_classes(x_test,batch_size=200)
+#y_prob = model.predict(x_test,batch_size=200)
+
+print(accuracy_score(y_test,y_pred))
+recall=recall_score(y_test, y_pred,average='macro')
+print(recall)
+print(f1_score(y_test,y_pred,average="macro"))
+
+print(y_pred)
+#print(y_prob)
+cnf_matrix=confusion_matrix(y_test, y_pred, labels=np.unique(y_test))
+np.set_printoptions(precision=1)
+class_names=class_name=['Swipe right',"Up and down","Circle clockwise","Push","No activity"]
+# Plot non-normalized confusion matrix
+#plot_confusion_matrix(cnf_matrix, classes=class_names,
+#                      title='Confusion matrix, without normalization')
+
+# Plot normalized confusion matrix
+plot_confusion_matrix(cnf_matrix, classes=class_names, normalize=True,
+                      title='Normalized Confusion Matrix')
+
+plt.show()
+
+print(result.history)
