@@ -47,29 +47,8 @@ import optunity
 from optunity.metrics import accuracy
 import matplotlib
 
-
-
-#x0=pickle.load(open( "x.p", "rb" ) )
-#y0=pickle.load(open( "y.p", "rb" ) )
-#x1=pickle.load(open( "x1.p", "rb" ) )
-#y1=pickle.load(open( "y1.p", "rb" ) )
-#x2=pickle.load(open( "x2.p", "rb" ) )
-#y2=pickle.load(open( "y2.p", "rb" ) )
-#x3=pickle.load(open( "x3.p", "rb" ) )
-#y3=pickle.load(open( "y3.p", "rb" ) )
-#x=np.concatenate((x1,x2,x3), axis=0)
-#y=np.concatenate((y1,y2,y3), axis=0)
-#x518=pickle.load(open( "x_518_fall.p", "rb" ) )
-#y518=pickle.load(open( "y_518_fall.p", "rb" ) )
-#x519=pickle.load(open( "x_519_fall.p", "rb" ) )
-#y519=pickle.load(open( "y_519_fall.p", "rb" ) )
-
-
-x=pickle.load(open( "D:/paper/gesture_TVT_05.05.2021/Data/x_417.p", "rb" ) )
-y=pickle.load(open( "D:/paper/gesture_TVT_05.05.2021/Data/y_417.p", "rb" ) )
-
-#x=np.concatenate((x518,x519), axis=0)
-#y=np.concatenate((y518,y519), axis=0)
+x=pickle.load(open( "x_417.p", "rb" ) )
+y=pickle.load(open( "y_417.p", "rb" ) )
 
 print(x.shape)
 
@@ -163,35 +142,6 @@ yall=np.concatenate((y0,y1,y2,y3,y4), axis=0)
 xall=np.concatenate((x0,x1,x2,x3,x4), axis=0)
 print(xall.shape,yall.shape)
 print(np.unique(yall,return_counts=True))
-
-# y9=y[y==9]
-# x9=x[y==9]
-#
-# y8=y[y==8]
-# x8=x[y==8]
-#
-# y7=y[y==7]
-# x7=x[y==7]
-#
-# y6=y[y==6]
-# x6=x[y==6]
-#
-#
-# y5=y[y==5]
-# x5=x[y==5]
-# x5, y5 = shuffle(x5,y5)
-#
-# x5=x5[:1000,::]
-# y5=y5[:1000]
-
-# yall=np.concatenate((y9,y8,y7,y6,y5), axis=0)
-# xall=np.concatenate((x9,x8,x7,x6,x5), axis=0)
-# le = preprocessing.LabelEncoder()
-# yall=le.fit_transform(yall)
-# print(xall.shape,yall.shape)
-# print(np.unique(yall,return_counts=True))
-
-
 
 x_train, x_test, y_train, y_test =train_test_split(xall, yall, test_size=0.15)
 
